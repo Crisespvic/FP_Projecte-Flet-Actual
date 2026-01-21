@@ -1,0 +1,5 @@
+flet
+flet_webview
+fpdf
+requests
+folium

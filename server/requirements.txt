@@ -1,0 +1,9 @@
+express 
+@aws-sdk/client-bedrock 
+@aws-sdk/client-bedrock-runtime 
+@aws-sdk/client-bedrock-agent-runtime 
+@aws-sdk/credential-providers
+dotenv
+cors
+fuse.js
+@google/generative-ai
