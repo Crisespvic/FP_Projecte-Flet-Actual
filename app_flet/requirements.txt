@@ -1,5 +1,4 @@
 flet
-flet_webview
+flet-map
 fpdf
 requests
-folium

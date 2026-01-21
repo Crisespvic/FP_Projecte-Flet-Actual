@@ -1,7 +1,8 @@
 import flet as ft
-from flet_webview import WebView
+import flet_map as ftm
 from controllers.fp_controller import obtenir_tots_els_filtres, executar_cerca_oferta, obtenir_comarques, obtenir_localitats_de_comarca, obtenir_localitats_de_provincia, obtenir_tots_els_cicles_fp, obtenir_tots_els_cicles_ce, obtenir_cicles_filtrats, obtenir_cursos_filtrats
 from models.ai_models import ChatTab
+import asyncio
 
 class FpApp:
     def __init__(self, page: ft.Page):
@@ -122,21 +123,21 @@ class FpApp:
             icon_size=40,
             tooltip="Primera pàgina"
         )
-        self.fp_inici_page_btn.on_click=lambda e: self.change_page(e, 1)
+        self.fp_inici_page_btn.on_click=lambda e: asyncio.create_task(self.change_page(e, 1))
 
         self.fp_before_btn = ft.IconButton(
             icon=ft.Icons.ARROW_BACK_IOS, 
             icon_size=26,
             tooltip="Anterior"
         )
-        self.fp_before_btn.on_click=self.before_page
+        self.fp_before_btn.on_click=lambda e: asyncio.create_task(self.before_page(e))
 
         self.fp_next_btn = ft.IconButton(
             icon=ft.Icons.ARROW_FORWARD_IOS, 
             icon_size=26,
             tooltip="Següent"
         )
-        self.fp_next_btn.on_click=self.next_page
+        self.fp_next_btn.on_click=lambda e: asyncio.create_task(self.next_page(e))
 
         self.fp_num_pagina = ft.TextField(
             value="1", # Valor inicial
@@ -148,14 +149,14 @@ class FpApp:
             border_color="blue-800",
             content_padding=5
         )
-        self.fp_num_pagina.on_submit=lambda e: self.change_page(e, self.fp_num_pagina.value)
+        self.fp_num_pagina.on_submit=lambda e: asyncio.create_task(self.change_page(e, self.fp_num_pagina.value))
 
         self.fp_final_page_btn = ft.IconButton(
         icon=ft.Icons.LAST_PAGE, 
         icon_size=40,
         tooltip="Última pàgina"
         )
-        self.fp_final_page_btn.on_click=lambda e: self.change_page(e, self.total_pages_fp)
+        self.fp_final_page_btn.on_click=lambda e: asyncio.create_task(self.change_page(e, self.total_pages_fp))
         self.fp_nav_row = ft.Row([self.fp_inici_page_btn, self.fp_before_btn, self.fp_num_pagina, self.fp_next_btn, self.fp_final_page_btn], alignment="center")
 
         # --- DEFINICIÓ DROPDOWNS CE ---
@@ -212,21 +213,21 @@ class FpApp:
             icon_size=40,
             tooltip="Primera pàgina"
         )
-        self.ce_inici_page_btn.on_click=lambda e: self.change_page(e, 1)
+        self.ce_inici_page_btn.on_click=lambda e: asyncio.create_task(self.change_page(e, 1))
 
         self.ce_before_btn = ft.IconButton(
             icon=ft.Icons.ARROW_BACK_IOS, 
             icon_size=26,
             tooltip="Anterior"
         )
-        self.ce_before_btn.on_click=self.before_page
+        self.ce_before_btn.on_click=lambda e: asyncio.create_task(self.before_page(e))
 
         self.ce_next_btn = ft.IconButton(
             icon=ft.Icons.ARROW_FORWARD_IOS, 
             icon_size=26,
             tooltip="Següent"
         )
-        self.ce_next_btn.on_click=self.next_page
+        self.ce_next_btn.on_click=lambda e: asyncio.create_task(self.next_page(e))
 
         self.ce_num_pagina = ft.TextField(
             value="1",              # Valor inicial
@@ -238,22 +239,45 @@ class FpApp:
             border_color="blue-800",
             content_padding=5
         )
-        self.ce_num_pagina.on_submit=lambda e: self.change_page(e, self.ce_num_pagina.value)
+        self.ce_num_pagina.on_submit=lambda e: asyncio.create_task(self.change_page(e, self.ce_num_pagina.value))
 
         self.ce_final_page_btn = ft.IconButton(
             icon=ft.Icons.LAST_PAGE,
             icon_size=40, 
             tooltip="Última pàgina"
         )
-        self.ce_final_page_btn.on_click=lambda e: self.change_page(e, self.total_pages_ce)
+        self.ce_final_page_btn.on_click=lambda e: asyncio.create_task(self.change_page(e, self.total_pages_ce))
 
         self.ce_nav_row = ft.Row([self.ce_inici_page_btn, self.ce_before_btn, self.ce_num_pagina, self.ce_next_btn, self.ce_final_page_btn], alignment="center")
 
 
-        # --- CONFIGURACIÓ DEL MAPA ---
-        self.map_widget = WebView(
-            self.vista_chatbot.generar_mapa_multiple([], cicle_fp=True),
-            expand=True
+        # --- CONFIGURACIÓ DELS MAPES ---
+        # Mapa independent per a FP
+        self.map_fp = ftm.Map(
+            expand=True,
+            initial_center=ftm.MapLatitudeLongitude(39.48, -0.37),
+            initial_zoom=8,
+            interaction_configuration=ftm.InteractionConfiguration(flags=ftm.InteractionFlag.ALL),
+            layers=[
+                ftm.TileLayer(
+                    url_template="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    on_image_error=lambda e: print("TileLayer Error")
+                )
+            ]
+        )
+
+        # Mapa independent per a CE
+        self.map_ce = ftm.Map(
+            expand=True,
+            initial_center=ftm.MapLatitudeLongitude(39.48, -0.37),
+            initial_zoom=8,
+            interaction_configuration=ftm.InteractionConfiguration(flags=ftm.InteractionFlag.ALL),
+            layers=[
+                ftm.TileLayer(
+                    url_template="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    on_image_error=lambda e: print("TileLayer Error")
+                )
+            ]
         )
 
         # --- VISTA 1: CICLES FP ---
@@ -284,7 +308,7 @@ class FpApp:
                                                     bgcolor="#076350",
                                                     color=ft.Colors.WHITE,
                                                     padding=10), 
-                                                on_click=self.handle_search, 
+                                                on_click=lambda e: asyncio.create_task(self.handle_search(e, cicle_fp=True)), 
                                                 tooltip="Buscar resultats"),
                                 ft.Button("NETEJAR",
                                                 data="clean_button", 
@@ -293,7 +317,7 @@ class FpApp:
                                                     bgcolor="#076350",
                                                     color=ft.Colors.WHITE,
                                                     padding=10), 
-                                                on_click=self.refresh_dropdowns, 
+                                                on_click=lambda e: asyncio.create_task(self.refresh_dropdowns(e, cicle_fp=True)), 
                                                 tooltip="Netejar la finestra")
                                                   ], alignment=ft.MainAxisAlignment.CENTER)
                         ])
@@ -305,7 +329,7 @@ class FpApp:
                 ], expand=True, alignment=ft.MainAxisAlignment.START, horizontal_alignment=ft.CrossAxisAlignment.STRETCH),
                 ft.VerticalDivider(width=1, color=ft.Colors.BLUE_100),
                 # Contenidor del Mapa
-                ft.Container(ref=self.map_container_fp, expand=True, border=ft.Border.all(1, ft.Colors.BLUE_GREY_200), border_radius=15, content=self.map_widget)
+                ft.Container(ref=self.map_container_fp, expand=True, border=ft.Border.all(1, ft.Colors.BLUE_GREY_200), border_radius=15, content=self.map_fp)
                 ], expand=True)
         ], expand=True)
 
@@ -337,7 +361,7 @@ class FpApp:
                                                     bgcolor="#076350",
                                                     color=ft.Colors.WHITE,
                                                     padding=10), 
-                                                on_click=lambda e: self.handle_search(e, cicle_fp=False), 
+                                                on_click=lambda e: asyncio.create_task(self.handle_search(e, cicle_fp=False)), 
                                                 tooltip="Buscar resultats"),
                                 ft.Button("NETEJAR", 
                                                 data="clean_button",
@@ -346,7 +370,7 @@ class FpApp:
                                                     bgcolor="#076350",
                                                     color=ft.Colors.WHITE,
                                                     padding=10), 
-                                                on_click=lambda e: self.refresh_dropdowns(e, cicle_fp=False), 
+                                                on_click=lambda e: asyncio.create_task(self.refresh_dropdowns(e, cicle_fp=True)), 
                                                 tooltip="Netejar la finestra")
                             ], alignment=ft.MainAxisAlignment.CENTER)
                         ])
@@ -370,7 +394,7 @@ class FpApp:
                     expand=True, 
                     border=ft.Border.all(1, ft.Colors.BLUE_GREY_200), 
                     border_radius=15, 
-                    content=self.map_widget
+                    content=self.map_ce
                 )
             ], expand=True)
         ], expand=True)
@@ -434,7 +458,7 @@ class FpApp:
     
     # FUNCIONS PER AL CANVI DE PÀGINA DE RESULTATS
     # Funció per canviar de pàgina introduint el número de pàgina
-    def change_page(self, e, num_pagina):
+    async def change_page(self, e, num_pagina):
         num_pagina=int(num_pagina)
         cicle_fp = True
         if self.tabs.selected_index == 0:
@@ -450,10 +474,10 @@ class FpApp:
             elif num_pagina > self.total_pages_ce:
                 num_pagina = self.total_pages_ce
             self.num_pagina_actual_ce = num_pagina
-        self.handle_search(e, cicle_fp)
+        await self.handle_search(e, cicle_fp)
 
     # Funció per passar a la pàgina següent
-    def next_page(self, e):
+    async def next_page(self, e):
         cicle_fp = True
         if self.tabs.selected_index == 0:
             if self.num_pagina_actual_fp <= self.total_pages_fp:
@@ -462,17 +486,17 @@ class FpApp:
             cicle_fp = False
             if self.num_pagina_actual_ce <= self.total_pages_ce:
                 self.num_pagina_actual_ce += 1
-        self.handle_search(e, cicle_fp)
+        await self.handle_search(e, cicle_fp)
 
     # Funció per passar a la pàgina anterior
-    def before_page(self, e):
+    async def before_page(self, e):
         cicle_fp = True
         if self.tabs.selected_index == 0:
             if self.num_pagina_actual_fp > 1: self.num_pagina_actual_fp -= 1
         else:
             cicle_fp = False
             if self.num_pagina_actual_ce > 1: self.num_pagina_actual_ce -= 1
-        self.handle_search(e, cicle_fp)
+        await self.handle_search(e, cicle_fp)
 
     # Funció per enviar el input del usuari en el chatbot
     def enviar_missatge_chat(self, e):
@@ -485,7 +509,7 @@ class FpApp:
         self.page.update()
     
     # Funció per netejar la informació dels Dropdowns
-    def refresh_dropdowns(self, e, cicle_fp=True):
+    async def refresh_dropdowns(self, e, cicle_fp=True):
         if cicle_fp:
             self.drop_provincia_fp.value = "---NINGUNA---"
             self.drop_comarca_fp.value = "---NINGUNA---"
@@ -497,7 +521,7 @@ class FpApp:
             self.results_col_fp.controls.clear()
             self.fp_result_text.value = "0 resultats"
 
-            self.actualitzar_mapa_centre()
+            await self.actualitzar_mapa_centre()
         else:
             self.drop_provincia_ce.value = "---NINGUNA---"
             self.drop_comarca_ce.value = "---NINGUNA---"
@@ -509,7 +533,7 @@ class FpApp:
             self.results_col_ce.controls.clear()
             self.ce_result_text.value = "0 resultats"
 
-            self.actualitzar_mapa_centre(cicle_fp=False)
+            await self.actualitzar_mapa_centre(cicle_fp=False)
 
         self.page.update()
 
@@ -640,7 +664,7 @@ class FpApp:
         self.page.update()
 
     # --- GESTIÓ DE CERCA I TARGETES ---
-    def handle_search(self, e, cicle_fp=True):
+    async def handle_search(self, e, cicle_fp=True):
         # Gestionar el reinici de la paginació
         if e.control and e.control.data == "search_button":
             if cicle_fp:
@@ -692,7 +716,7 @@ class FpApp:
             for result in oferta:
                 card = self.vista_chatbot.create_card(
                     result, 
-                    on_map_click=lambda c, _: self.actualitzar_mapa_centre(c, cicle_fp=True),
+                    on_map_click=lambda c, _: asyncio.create_task(self.actualitzar_mapa_centre(c, cicle_fp=True)),
                     tipus_vista="fp"
                 )
                 if result.latitud and result.longitud:
@@ -700,9 +724,7 @@ class FpApp:
                 self.results_col_fp.controls.append(card)
             
             if self.lat_lon_fplist:
-                nova_url_mapa = self.vista_chatbot.generar_mapa_multiple(self.lat_lon_fplist)
-                if self.map_container_fp.current:
-                    self.map_container_fp.current.content = WebView(nova_url_mapa, expand=True)
+                await self.vista_chatbot.generar_mapa_multiple(self.lat_lon_fplist, tipus_vista="fp")
 
         # LÒGICA PER A CURSOS D'ESPECIALITZACIÓ (CE)
         else:
@@ -741,7 +763,7 @@ class FpApp:
             for result in oferta:
                 card = self.vista_chatbot.create_card(
                     result, 
-                    on_map_click=lambda c, _: self.actualitzar_mapa_centre(c, cicle_fp=False),
+                    on_map_click=lambda c, _: asyncio.create_task(self.actualitzar_mapa_centre(c, cicle_fp=False)),
                     tipus_vista="ce"
                 )
                 if result.latitud and result.longitud:
@@ -749,23 +771,23 @@ class FpApp:
                 self.results_col_ce.controls.append(card)
             
             if self.lat_lon_celist:
-                nova_url_mapa = self.vista_chatbot.generar_mapa_multiple(self.lat_lon_celist, cicle_fp=False)
-                if self.map_container_ce.current:
-                    self.map_container_ce.current.content = WebView(nova_url_mapa, expand=True)
-
+                await self.vista_chatbot.generar_mapa_multiple(self.lat_lon_celist, tipus_vista="ce")
         self.page.update()
 
     # Lògica per ubicar un centre amb un punt en el mapa
     # o tota la comunitat Valenciana en cas de no passar-li cap centre
-    def actualitzar_mapa_centre(self, centre=None, cicle_fp=True):
+    async def actualitzar_mapa_centre(self, centre=None, cicle_fp=True):
         if centre and centre.latitud and centre.longitud:
-            self.lat_lon_fplist = [(float(centre.latitud), float(centre.longitud))] if cicle_fp else [(float(centre.latitud), float(centre.longitud))]
+            coords = [(float(centre.latitud), float(centre.longitud))]
+            if cicle_fp:
+                self.lat_lon_fplist = coords
+            else:
+                self.lat_lon_celist = coords
         # Generem mapa amb les coordenades actuals
-        nova_url_mapa = self.vista_chatbot.generar_mapa_multiple(self.lat_lon_fplist if cicle_fp else self.lat_lon_celist, cicle_fp)
-        if cicle_fp:
-            self.map_container_fp.current.content = WebView(nova_url_mapa, expand=True)
-        else:
-            self.map_container_ce.current.content = WebView(nova_url_mapa, expand=True)
+        await self.vista_chatbot.generar_mapa_multiple(
+            self.lat_lon_fplist if cicle_fp else self.lat_lon_celist,
+            tipus_vista="fp" if cicle_fp else "ce"
+        )
         self.page.update()
 
 

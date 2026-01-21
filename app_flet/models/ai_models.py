@@ -1,10 +1,8 @@
 import flet as ft
-from flet_webview import WebView
+import flet_map as ftm
 from controllers.chat_controller2 import processar_pregunta
 from models.fp_models import Targeta
 import base64
-import folium
-import os
 import asyncio
 
 class ChatTab(ft.Container):
@@ -43,8 +41,19 @@ class ChatTab(ft.Container):
 
         # 3. Mapa (Dreta)
         self.map_container = ft.Ref[ft.Container]()
-        url_cv = "https://www.openstreetmap.org/export/embed.html?bbox=-1.5,37.8,0.5,40.5&layer=mapnik"
-        self.map_widget = WebView(url_cv, expand=True) 
+        self.map_widget = ftm.Map(
+            expand=True,
+            initial_center=ftm.MapLatitudeLongitude(39.48, -0.37),
+            initial_zoom=8,
+            interaction_configuration=ftm.InteractionConfiguration(flags=ftm.InteractionFlag.ALL),
+            layers=[
+                ftm.TileLayer(
+                    url_template="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    on_image_error=lambda e: print("TileLayer Error")
+                )
+            ]
+        )
+        
 
         # ESTRUCTURA DE LA PÀGINA
         # Botons de la pàgina
@@ -155,14 +164,11 @@ class ChatTab(ft.Container):
                     if result.latitud and result.longitud:
                         self.lat_lon_list.append((result.latitud, result.longitud))
                     
-                    self.chat_history.controls.append(self.create_card(result, on_map_click=self.map_update, tipus_vista="xat"))
+                    self.chat_history.controls.append(self.create_card(result, on_map_click=self.map_update))
 
                 # GENERAR EL MAPA MULTIPLE
                 if self.lat_lon_list:
-                    nova_url_mapa = self.generar_mapa_multiple(self.lat_lon_list)
-                    # Actualitzem el contingut del mapa
-                    if self.map_container.current:
-                        self.map_container.current.content = WebView(nova_url_mapa, expand=True)
+                    await self.generar_mapa_multiple(self.lat_lon_list)
             else:
                 self.chat_history.controls.append(
                     ft.Text(f"{resposta}", size=18, color="red", italic=True)
@@ -175,7 +181,7 @@ class ChatTab(ft.Container):
             
         self.page.update()
         
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.5)
         if self.chat_history.controls:
             # Utilitzem offset=-1 que, segons la documentació que has passat,
             # força el càlcul fins al final real de tot el contingut actualitzat.
@@ -206,7 +212,7 @@ class ChatTab(ft.Container):
                 bgcolor="#076350",     # Color de fons del botó
             )
         )
-        self.map_btn.on_click=lambda _: on_map_click(centre, tipus_vista)
+        self.map_btn.on_click = lambda _: asyncio.create_task(on_map_click(centre, tipus_vista))
 
         regim = ""
         torn = ""
@@ -279,92 +285,89 @@ class ChatTab(ft.Container):
         )
     
     # --- LÒGICA DEL MAPA ---
-    def map_update(self, centre=None, tipus_vista="xat"):
-        if centre:
-            try:
-                # Obtenim les coordenades reals de l'objecte centre
-                # Les convertim a float()
-                lat = float(centre.latitud)
-                lon = float(centre.longitud)
-                
-                # Definim el zoom (delta)
-                delta = 0.005  # Un valor més xicotet per a veure millor el carrer del centre
-                
-                # Calculem el Bounding Box (l'àrea visible del mapa)
-                bbox = f"{lon-delta}%2C{lat-delta}%2C{lon+delta}%2C{lat+delta}"
-                
-                # Afegim el marcador exactament en la latitud i longitud del centre
-                marker = f"&marker={lat}%2C{lon}"
-                
-                # Construïm la URL de OpenStreetMap
-                new_url = f"https://www.openstreetmap.org/export/embed.html?bbox={bbox}&layer=mapnik{marker}"
-                
-                # Actualitzem el WebView del contenidor
-                # current.content és necessari si uses ft.Ref
-                target_container = None
-                if tipus_vista == "fp":
-                    target_container = self.map_container_fp
-                elif tipus_vista == "ce":
-                    target_container = self.map_container_ce
-                else:
-                    target_container = self.map_container # El del xat
+    async def map_update(self, centre=None, tipus_vista="xat"):
+        if not centre or not centre.latitud or not centre.longitud:
+            return
+        try:
+            # Obtenim les coordenades reals de l'objecte centre
+            # Les convertim a float()
+            lat = float(centre.latitud)
+            lon = float(centre.longitud)
 
-                # Actualitzem el contenidor seleccionat
-                if target_container and target_container.current:
-                    target_container.current.content = WebView(new_url, expand=True)
-                    self.page.update()
-                    
-            except (ValueError, TypeError, AttributeError) as e:
-                # Si un centre no té coordenades o les dades són errònies
-                print(f"Error en les coordenades del centre {centre.nom}: {e}")
-                # Opcional: mostrar un missatge a l'usuari (SnackBar)
-                self.page.snack_bar = ft.SnackBar(ft.Text("Aquest centre no té coordenades vàlides"))
-                self.page.snack_bar.open = True
-                self.page.update()
+            # Actualitzem el WebView del contenidor
+            target_container = None
+            if tipus_vista == "fp":
+                target_container = self.map_container_fp
+            elif tipus_vista == "ce":
+                target_container = self.map_container_ce
+            else:
+                target_container = self.map_container # El del xat
+            
+            # Referencia al contenedor del mapa
+            target_map = self.map_widget
+
+            # Creamos una capa de marcadores si no existe
+            if not hasattr(target_map, "_marker_layer"):
+                target_map._marker_layer = ftm.MarkerLayer(markers=[])
+                target_map.layers.append(target_map._marker_layer)
+            
+            # Añadimos el marcador del centro
+            target_map._marker_layer.markers.append(
+                ftm.Marker(
+                    content=ft.Icon(ft.Icons.LOCATION_ON, color=ft.Colors.RED),
+                    coordinates=ftm.MapLatitudeLongitude(lat, lon)
+                )
+            )
+
+            # Centramos el mapa en el marcador
+            target_map.move_to(destination=ftm.MapLatitudeLongitude(lat, lon), zoom=15)
+            self._page.update()
+                
+        except (ValueError, TypeError) as e:
+            print(f"Error en coordenadas: {e}")
+            await self._page.update_async()
+
+
+    async def generar_mapa_multiple(self, llista_coords, tipus_vista="xat"):
+        
+        # Escollim el map_widget correcte
+        if tipus_vista == "fp" and self.map_container_fp:
+            target_map = self.map_container_fp.current.content  # el map_widget dins del container FP
+        elif tipus_vista == "ce" and self.map_container_ce:
+            target_map = self.map_container_ce.current.content  # el map_widget dins del container CE
         else:
-            url_cv = "https://www.openstreetmap.org/export/embed.html?bbox=-1.5,37.8,0.5,40.5&layer=mapnik"
-            self.map_container.current.content = WebView(url_cv, expand=True)
-            self.page.update()
+            target_map = self.map_widget
+    
+        # Creem la capa de marcadors si no existeix
+        if not hasattr(target_map, "_marker_layer"):
+            target_map._marker_layer = ftm.MarkerLayer(markers=[])
+            target_map.layers.append(target_map._marker_layer)
+        else:
+            target_map._marker_layer.markers.clear()
 
-
-    def generar_mapa_multiple(self, llista_coords):
-        html_content = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-            <style>#map { height: 100vh; width: 100%; margin: 0; }</style>
-        </head>
-        <body>
-            <div id="map"></div>
-            <script>
-                var map = L.map('map');
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-                var markers = [];
-        """
-
+        # Afegim els marcadors
         for lat, lon in llista_coords:
             try:
-                # Leaflet necessita floats
-                lat_f = float(lat)
-                lon_f = float(lon)
-                html_content += f"markers.push(L.marker([{lat_f}, {lon_f}]).addTo(map));\n"
-            except: continue
+                target_map._marker_layer.markers.append(
+                    ftm.Marker(
+                        content=ft.Icon(ft.Icons.LOCATION_ON, color=ft.Colors.RED_ACCENT, size=36),
+                        coordinates=ftm.MapLatitudeLongitude(float(lat), float(lon)),
+                        expand=True
+                    )
+                )
+            except Exception as e:
+                print(f"Error afegint marcador ({lat}, {lon}): {e}")
+                continue
 
-        html_content += """
-                if (markers.length > 0) {
-                    var group = new L.featureGroup(markers);
-                    map.fitBounds(group.getBounds().pad(0.2));
-                } else {
-                    map.setView([39.48, -0.37], 8);
-                }
-            </script>
-        </body>
-        </html>
-        """
-        b64 = base64.b64encode(html_content.encode('utf-8')).decode('utf-8')
-        return f"data:text/html;base64,{b64}"
+        # Centrem el mapa en el primer marcador
+        if llista_coords:
+            lat0, lon0 = llista_coords[0]
+            await target_map.move_to(destination=ftm.MapLatitudeLongitude(float(lat0), float(lon0)),zoom= 12)
+        else:
+            await target_map.center_on(point=ftm.MapLatitudeLongitude(39.47, -0.38), zoom=8,
+)
+
+        self._page.update()
     
     def exportar_a_html(self, e):
         if not self.conversa_per_exportar:
