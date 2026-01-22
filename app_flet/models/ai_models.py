@@ -168,7 +168,7 @@ class ChatTab(ft.Container):
 
                 # GENERAR EL MAPA MULTIPLE
                 if self.lat_lon_list:
-                    await self.generar_mapa_multiple(self.lat_lon_list)
+                    await self.generar_mapa_multiple(self.lat_lon_list, multiple_coords=True)
             else:
                 self.chat_history.controls.append(
                     ft.Text(f"{resposta}", size=18, color="red", italic=True)
@@ -183,17 +183,16 @@ class ChatTab(ft.Container):
         
         await asyncio.sleep(0.5)
         if self.chat_history.controls:
-            # Utilitzem offset=-1 que, segons la documentació que has passat,
-            # força el càlcul fins al final real de tot el contingut actualitzat.
+            # Utilitzem offset=-1 que força el càlcul fins al final real de tot el contingut actualitzat.
             await self.chat_history.scroll_to(
                 offset=-1, 
-                duration=800, # Una mica més lent per assegurar que el càlcul és correcte
+                duration=800,
                 curve=ft.AnimationCurve.DECELERATE
             )
 
 
     def create_card(self, centre: Targeta, on_map_click, tipus_vista="xat"):
-        # 1. Gestionem la URL de la web per al botó (centre ja és un objecte Targeta)
+        # Gestionem la URL de la web per al botó 
         web_url = centre.web if centre.web else "Web no disponible"
 
         self.web_btn = ft.TextButton(
@@ -208,8 +207,8 @@ class ChatTab(ft.Container):
             icon=ft.Icons.MAP_OUTLINED,
             tooltip="Ubicació del centre",
             style=ft.ButtonStyle(
-                color=ft.Colors.WHITE,          # Color del text i la icona
-                bgcolor="#076350",     # Color de fons del botó
+                color=ft.Colors.WHITE,
+                bgcolor="#076350",
             )
         )
         self.map_btn.on_click = lambda _: asyncio.create_task(on_map_click(centre, tipus_vista))
@@ -226,7 +225,7 @@ class ChatTab(ft.Container):
         else:
             torn = "SEMIPRESENCIAL"
 
-        # 2. Retornem la Card amb el teu disseny i lògica original
+        # Retornem la Card amb el teu disseny i lògica original
         return ft.Card(
             elevation=3,
             content=ft.Container(
@@ -285,42 +284,16 @@ class ChatTab(ft.Container):
         )
     
     # --- LÒGICA DEL MAPA ---
+    # Funció per marcar un punt en el mapa
     async def map_update(self, centre=None, tipus_vista="xat"):
         if not centre or not centre.latitud or not centre.longitud:
             return
+        
+        coords = [(float(centre.latitud), float(centre.longitud))]
+
         try:
-            # Obtenim les coordenades reals de l'objecte centre
-            # Les convertim a float()
-            lat = float(centre.latitud)
-            lon = float(centre.longitud)
-
-            # Actualitzem el WebView del contenidor
-            target_container = None
-            if tipus_vista == "fp":
-                target_container = self.map_container_fp
-            elif tipus_vista == "ce":
-                target_container = self.map_container_ce
-            else:
-                target_container = self.map_container # El del xat
-            
-            # Referencia al contenedor del mapa
-            target_map = self.map_widget
-
-            # Creamos una capa de marcadores si no existe
-            if not hasattr(target_map, "_marker_layer"):
-                target_map._marker_layer = ftm.MarkerLayer(markers=[])
-                target_map.layers.append(target_map._marker_layer)
-            
-            # Añadimos el marcador del centro
-            target_map._marker_layer.markers.append(
-                ftm.Marker(
-                    content=ft.Icon(ft.Icons.LOCATION_ON, color=ft.Colors.RED),
-                    coordinates=ftm.MapLatitudeLongitude(lat, lon)
-                )
-            )
-
-            # Centramos el mapa en el marcador
-            target_map.move_to(destination=ftm.MapLatitudeLongitude(lat, lon), zoom=15)
+            # Generem mapa amb les coordenades actuals
+            await self.generar_mapa_multiple(coords)
             self._page.update()
                 
         except (ValueError, TypeError) as e:
@@ -328,7 +301,7 @@ class ChatTab(ft.Container):
             await self._page.update_async()
 
 
-    async def generar_mapa_multiple(self, llista_coords, tipus_vista="xat"):
+    async def generar_mapa_multiple(self, llista_coords, tipus_vista="xat", multiple_coords=False):
         
         # Escollim el map_widget correcte
         if tipus_vista == "fp" and self.map_container_fp:
@@ -350,7 +323,7 @@ class ChatTab(ft.Container):
             try:
                 target_map._marker_layer.markers.append(
                     ftm.Marker(
-                        content=ft.Icon(ft.Icons.LOCATION_ON, color=ft.Colors.RED_ACCENT, size=36),
+                        content=ft.Icon(ft.Icons.LOCATION_ON, color=ft.Colors.BLUE_500, size=36),
                         coordinates=ftm.MapLatitudeLongitude(float(lat), float(lon)),
                         expand=True
                     )
@@ -360,12 +333,18 @@ class ChatTab(ft.Container):
                 continue
 
         # Centrem el mapa en el primer marcador
-        if llista_coords:
-            lat0, lon0 = llista_coords[0]
-            await target_map.move_to(destination=ftm.MapLatitudeLongitude(float(lat0), float(lon0)),zoom= 12)
+        if multiple_coords:
+            if llista_coords:
+                lat0, lon0 = llista_coords[0]
+                await target_map.move_to(destination=ftm.MapLatitudeLongitude(float(lat0), float(lon0)),zoom= 10)
+            else:
+                await target_map.center_on(point=ftm.MapLatitudeLongitude(39.47, -0.38), zoom=8)
         else:
-            await target_map.center_on(point=ftm.MapLatitudeLongitude(39.47, -0.38), zoom=8,
-)
+            if llista_coords:
+                lat0, lon0 = llista_coords[0]
+                await target_map.move_to(destination=ftm.MapLatitudeLongitude(float(lat0), float(lon0)),zoom= 15)
+            else:
+                await target_map.center_on(point=ftm.MapLatitudeLongitude(39.47, -0.38), zoom=8)
 
         self._page.update()
     

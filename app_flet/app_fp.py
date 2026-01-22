@@ -716,7 +716,7 @@ class FpApp:
             for result in oferta:
                 card = self.vista_chatbot.create_card(
                     result, 
-                    on_map_click=lambda c, _: asyncio.create_task(self.actualitzar_mapa_centre(c, cicle_fp=True)),
+                    on_map_click=lambda c, _: self.actualitzar_mapa_centre(c, cicle_fp=True),
                     tipus_vista="fp"
                 )
                 if result.latitud and result.longitud:
@@ -724,7 +724,7 @@ class FpApp:
                 self.results_col_fp.controls.append(card)
             
             if self.lat_lon_fplist:
-                await self.vista_chatbot.generar_mapa_multiple(self.lat_lon_fplist, tipus_vista="fp")
+                await self.vista_chatbot.generar_mapa_multiple(self.lat_lon_fplist, tipus_vista="fp", multiple_coords=True)
 
         # LÒGICA PER A CURSOS D'ESPECIALITZACIÓ (CE)
         else:
@@ -763,7 +763,7 @@ class FpApp:
             for result in oferta:
                 card = self.vista_chatbot.create_card(
                     result, 
-                    on_map_click=lambda c, _: asyncio.create_task(self.actualitzar_mapa_centre(c, cicle_fp=False)),
+                    on_map_click=lambda c, _: self.actualitzar_mapa_centre(c, cicle_fp=False),
                     tipus_vista="ce"
                 )
                 if result.latitud and result.longitud:
@@ -771,7 +771,7 @@ class FpApp:
                 self.results_col_ce.controls.append(card)
             
             if self.lat_lon_celist:
-                await self.vista_chatbot.generar_mapa_multiple(self.lat_lon_celist, tipus_vista="ce")
+                await self.vista_chatbot.generar_mapa_multiple(self.lat_lon_celist, tipus_vista="ce", multiple_coords=True)
         self.page.update()
 
     # Lògica per ubicar un centre amb un punt en el mapa
