@@ -1,3 +1,5 @@
 # aws sso login --profile projecte1
 # aws sts get-caller-identity --profile projecte1
 # cat ~/.aws/config
+
+# https://gva-cons.awsapps.com/start/

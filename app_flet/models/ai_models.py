@@ -120,10 +120,10 @@ class ChatTab(ft.Container):
         # Guarda la conversa
         self.conversa_per_exportar.append({"rol": "usuari", "text": user_text})
         
-        # NETEJEM la llista de coordenades per a la nova consulta
+        # Netegem la llista de coordenades per a la nova consulta
         self.lat_lon_list = []
         
-        # (Codi d'afegir missatge de l'usuari igual...)
+        # Missatge de l'usuari per pantalla
         self.chat_history.controls.append(
             ft.Row([
                 ft.Container(
@@ -143,7 +143,7 @@ class ChatTab(ft.Container):
         self.page.update()
 
         try:
-            resposta = processar_pregunta(user_text)
+            resposta, tipus_resposta = processar_pregunta(user_text)
             if isinstance(resposta, list):
                 for result in resposta:
                     # Guarda les dades per al Html
@@ -166,13 +166,37 @@ class ChatTab(ft.Container):
                     
                     self.chat_history.controls.append(self.create_card(result, on_map_click=self.map_update))
 
-                # GENERAR EL MAPA MULTIPLE
+                # Generar mapa amb múltiples punts
                 if self.lat_lon_list:
                     await self.generar_mapa_multiple(self.lat_lon_list, multiple_coords=True)
             else:
-                self.chat_history.controls.append(
-                    ft.Text(f"{resposta}", size=18, color="red", italic=True)
-                )
+                # Resposta del model
+                if tipus_resposta == "Coneixement":
+                    self.chat_history.controls.append(ft.Row([
+                        ft.Container(
+                            content=ft.Text(resposta, color="white"),
+                            bgcolor="#1F3C50",
+                            padding=15,
+                            border_radius=ft.border_radius.only(
+                                top_left=20, top_right=20, bottom_left=20, bottom_right=2
+                            ),
+                            expand=True 
+                        )
+                    ], alignment=ft.MainAxisAlignment.START))
+                # Error a mostrar a l'usuari
+                else:
+                    self.chat_history.controls.append(ft.Row([
+                        ft.Container(
+                            content=ft.Text(resposta, color="white"),
+                            bgcolor="#832020",
+                            padding=15,
+                            border_radius=ft.border_radius.only(
+                                top_left=20, top_right=20, bottom_left=20, bottom_right=2
+                            ),
+                            expand=True 
+                        )
+                    ], alignment=ft.MainAxisAlignment.START)
+                    )
         except Exception as ex:
             print(f"Error intern: {ex}") # AIXÒ ET DIRÀ L'ERROR REAL EN CONSOLA
             self.chat_history.controls.append(

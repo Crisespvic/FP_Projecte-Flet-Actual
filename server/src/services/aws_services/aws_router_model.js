@@ -47,7 +47,9 @@ Exemples de resposta:
  * Funció per cridar al model orquestrador o ruter
  */
 export const interpretarPregunta = async (missatgeUsuari) => {
-    
+  
+  let jsonDades;
+  
   try {
     const command = new ConverseCommand({
       modelId: process.env.AWS_MODEL_ID0,
@@ -77,7 +79,7 @@ export const interpretarPregunta = async (missatgeUsuari) => {
     // Neteja per si el model posa ```json ... ``` o punts i coma
     text = text.replace(/```json|```/g, "").replace(/;/g, "").trim();
 
-    const jsonDades = JSON.parse(text);
+    jsonDades = JSON.parse(text);
 
     // RETORNEM NOMÉS EL STRING ("Parametritzada" o "Coneixement")
     // Així el teu IF en handleChat funcionarà correctament.
@@ -86,6 +88,7 @@ export const interpretarPregunta = async (missatgeUsuari) => {
   } catch (error) {
     console.error("❌ Error Bedrock:", error);
     // Mantenim el mateix comportament d'error que tenies amb Gemini
-    throw new Error("No s'ha pogut interpretar la pregunta amb Bedrock");
+    jsonDades = "Error";
+    return jsonDades;
   }
 };
