@@ -1,10 +1,9 @@
 import express from 'express';
-import { getModels, invokeNova, invokeAgent } from '../controllers/aws_controller.js';
+import { handleChat } from '../controllers/aws_controllers/aws_router_controller.js';
 
 const router = express.Router();
 
-router.get('/models', getModels);
-router.post('/nova', invokeNova);
-router.post('/agent', invokeAgent);
+// Ruta del agent interpret 
+router.post('/chat', handleChat);
 
 export default router;

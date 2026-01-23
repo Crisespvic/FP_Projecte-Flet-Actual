@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import routes from './routes/aws_routes.js';
+import awsroutes from './routes/aws_routes.js';
 import fpRoutes from './routes/fp_routes.js';
-import chatRoutes from './routes/chat_routes.js';
+//import chatRoutes from './routes/chat_routes.js';
 import normalitzador from './services/normalitzador.js';
 import dotenv from 'dotenv';
 
@@ -17,9 +17,9 @@ app.use(cors());
 app.use(express.json());
 
 // Ús de les rutes
-app.use('/api/bedrock', routes);
+app.use('/api/fp', awsroutes);
 app.use('/api/fp', fpRoutes);
-app.use('/api/fp', chatRoutes);
+//app.use('/api/fp', chatRoutes);
 
 const PORT = process.env.PORT || 3000;
 

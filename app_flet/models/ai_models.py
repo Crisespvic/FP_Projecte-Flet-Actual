@@ -200,7 +200,7 @@ class ChatTab(ft.Container):
             style=ft.ButtonStyle(padding=0), 
             tooltip="Pàgina Web del Centre"
         )
-        self.web_btn.on_click=lambda _: self.page.launch_url(web_url)
+        self.web_btn.on_click = lambda e: asyncio.create_task(e.page.launch_url(web_url))
 
         self.map_btn = ft.ElevatedButton(
             "Veure en el mapa",

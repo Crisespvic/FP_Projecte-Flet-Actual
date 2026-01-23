@@ -1,0 +1,35 @@
+
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 30px; color: #333; }
+                .container { max-width: 850px; margin: auto; }
+                .user-msg { background: #2c3e50; color: white; padding: 15px; border-radius: 12px 12px 0 12px; margin-bottom: 25px; margin-left: 15%; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
+                .card { background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 8px solid #076350; position: relative; }
+                .title { color: #1a237e; font-size: 1.4em; margin: 0; font-weight: bold; text-transform: uppercase; }
+                .familia { color: #666; font-style: italic; margin-top: 5px; font-size: 0.95em; }
+                .cicle-info { font-size: 1.1em; margin: 15px 0; color: #000; font-weight: 600; }
+                .badges-row { margin: 10px 0; }
+                .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; color: white; font-size: 0.85em; font-weight: bold; margin-right: 8px; text-transform: uppercase; }
+                .public { background-color: #2e7d32; }
+                .concertat { background-color: #c62828; }
+                .torn { background-color: #1565c0; }
+                .contact-info { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; font-size: 0.9em; line-height: 1.6; color: #444; }
+                .web-link { color: #076350; text-decoration: none; font-weight: bold; }
+                @media print { .no-print { display: none; } body { background: white; padding: 0; } .card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; } }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1 style="color: #076350; text-align: center; margin-bottom: 40px;">El meu Itinerari Formatiu</h1>
+        <div class="user-msg"><b>La meua pregunta:</b><br>Quins son els mòduls de 1º del cicle de administració i gestió?</div>
+            </div>
+            <script>
+                window.onload = function() { 
+                    setTimeout(() => { window.print(); }, 800); 
+                };
+            </script>
+        </body>
+        </html>
+        

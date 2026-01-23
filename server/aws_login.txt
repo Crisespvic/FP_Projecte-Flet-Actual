@@ -1,3 +1,6 @@
 # aws sso login --profile projecte1
 # aws sts get-caller-identity --profile projecte1
 # cat ~/.aws/config
+
+# Comandament de prova de aws per terminal:
+curl -X POST http://localhost:3000/api/bedrock/nova -H "Content-Type: application/json" -d '{"userInput":"On fer DAW a Safor?"}'

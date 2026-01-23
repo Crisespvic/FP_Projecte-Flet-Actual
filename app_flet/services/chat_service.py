@@ -5,7 +5,7 @@ BASE_URL = "http://localhost:3000/api/fp"
 
 def send_message(message):
     try:
-        response = requests.post(f"{BASE_URL}/chat", json={"message": message}, timeout=10)
+        response = requests.post(f"{BASE_URL}/chat", json={"message": message})
         if response.status_code == 200:
             return response.json()
         return {"success": False, "message": "Error en el servidor"}
