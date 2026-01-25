@@ -172,6 +172,8 @@ class ChatTab(ft.Container):
             else:
                 # Resposta del model
                 if tipus_resposta == "Coneixement":
+                    # Guarda les dades per al Html
+                    self.conversa_per_exportar.append({"rol": "model_text", "text": resposta})
                     self.chat_history.controls.append(ft.Row([
                         ft.Container(
                             content=ft.Text(resposta, color="white"),
@@ -185,6 +187,8 @@ class ChatTab(ft.Container):
                     ], alignment=ft.MainAxisAlignment.START))
                 # Error a mostrar a l'usuari
                 else:
+                    # Guarda les dades per al Html
+                    self.conversa_per_exportar.append({"rol": "error", "text": resposta})
                     self.chat_history.controls.append(ft.Row([
                         ft.Container(
                             content=ft.Text(resposta, color="white"),
@@ -406,6 +410,11 @@ class ChatTab(ft.Container):
         for item in self.conversa_per_exportar:
             if item["rol"] == "usuari":
                 html_content += f'<div class="user-msg"><b>La meua pregunta:</b><br>{item["text"]}</div>'
+            elif item["rol"] == "model_text":
+                html_content += f'<div class="card" style="border-left: 8px solid #1F3C50;"><b>Resposta de l\'assistent:</b><br>{item["text"]}</div>'
+            
+            elif item["rol"] == "error":
+                html_content += f'<div class="card" style="border-left: 8px solid #832020; color: #832020;"><b>Error:</b><br>{item["text"]}</div>'
             else:
                 # Lògica de colors per al règim
                 regim_text = item.get('regim') or "Públic"
