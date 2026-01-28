@@ -1,10 +1,14 @@
 import { buscadorDeConeixenement } from '../../services/aws_services/agent_service.js';
+import dotenv from "dotenv";
 
+dotenv.config();
+
+// Configuració Bedrock
+const SESSION_ID = process.env.AWS_AGENT_SESSION_ID;
 export const biblioteca = async (message) => {
     try {
-        console.log("Ha arribat el missatge: "+message);
         // Cridem directament a l'agent d'AWS
-        const aiResponse = await buscadorDeConeixenement(message);
+        const aiResponse = await buscadorDeConeixenement(message, SESSION_ID);
 
         // Retornem la resposta estructurada per a que handleChat la puga enviar
         return {

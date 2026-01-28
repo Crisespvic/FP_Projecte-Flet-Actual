@@ -4,7 +4,6 @@ import {getCentresPerCicleOFamilia} from '../fp_controller.js';
 
 export const parametritzador = async (message) => {
     try {
-        console.log("Ha arribat el missatge: "+message);
         const aiOutput = await modelParametritzador(message);
         const paramsNets = normalitzador.normalitzar(aiOutput.params);
         let dadesFinals;

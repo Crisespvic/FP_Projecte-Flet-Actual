@@ -17,7 +17,7 @@ const agentClient = new BedrockAgentRuntimeClient({
  * Funció que connecta amb l'Agent de Bedrock.
  * L'Agent ja té el SYSTEM_PROMPT configurat a la consola d'AWS.
  */
-export const buscadorDeConeixenement = async (missatgeUsuari, sessionId = "sessio-temporal") => {
+export const buscadorDeConeixenement = async (missatgeUsuari, sessionId = "sessio-temporal1") => {
   try {
     const command = new InvokeAgentCommand({
       agentId: process.env.AWS_AGENT_ID,
@@ -36,7 +36,6 @@ export const buscadorDeConeixenement = async (missatgeUsuari, sessionId = "sessi
         textComplet += Buffer.from(bytes).toString("utf-8");
       }
     }
-    console.log("Resposta final de l'Agent: " + textComplet);
     // Retornem directament el resultat de l'Agent
     // No fem comprovacions de tipus, això ja s'ha decidit abans
     return textComplet.trim();
@@ -46,3 +45,4 @@ export const buscadorDeConeixenement = async (missatgeUsuari, sessionId = "sessi
     throw new Error("No s'ha pogut obtenir resposta de l'Agent d'AWS");
   }
 };
+

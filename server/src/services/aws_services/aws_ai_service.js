@@ -78,8 +78,6 @@ export const modelParametritzador = async (missatgeUsuari) => {
 
 
     const response = await runtime.send(command);
-    console.log("Soc el model i la resposta es: " + JSON.stringify(response.output.message.content, null, 2));
-
     // Extraiem el text de la resposta
     const text = response.output.message.content
       .map(part => part.text ?? "")

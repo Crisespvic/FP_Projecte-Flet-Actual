@@ -6,16 +6,13 @@ export const handleChat = async (req, res) => {
     try {
         const { message } = req.body;
         const tipus_pregunta = await interpretarPregunta(message);
-        console.log("Tipus de pregunta: "+tipus_pregunta);
 
         let resultat;
         if(tipus_pregunta === "Parametritzada"){
-            console.log("He entrat en el if de parametritzada");
            resultat = await parametritzador(message);
 
         }
         else if (tipus_pregunta === "Coneixement"){
-            console.log("He entrat en el if de coneixement");
             resultat = await biblioteca(message);
         }
         else{
