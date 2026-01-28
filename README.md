@@ -172,5 +172,3 @@ Aquest sistema representa un **avenç significatiu en la digitalització de l'or
 
 ---
 
-> Desenvolupat amb ❤️ i IA per a l'educació pública
-
