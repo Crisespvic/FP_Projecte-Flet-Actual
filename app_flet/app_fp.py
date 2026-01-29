@@ -7,7 +7,7 @@ import asyncio
 class FpApp:
     def __init__(self, page: ft.Page):
         self.page = page
-        self.page.title = "Orientat FP - Comunitat Valenciana"
+        self.page.title = "Orienta't FP - Comunitat Valenciana"
         self.page.theme_mode = ft.ThemeMode.LIGHT
         
         # Referències per a actualització dinàmica
